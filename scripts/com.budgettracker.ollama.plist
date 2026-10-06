@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- macOS: start Ollama at login and make it reachable from your network (the Home Assistant add-on).
+     Install: cp scripts/com.budgettracker.ollama.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/com.budgettracker.ollama.plist
+     (Intel Macs: change /opt/homebrew/bin/ollama to /usr/local/bin/ollama) -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.budgettracker.ollama</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/ollama</string>
+    <string>serve</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>OLLAMA_HOST</key>
+    <string>0.0.0.0:11434</string>
+    <key>OLLAMA_KEEP_ALIVE</key>
+    <string>10m</string>
+    <key>OLLAMA_NUM_PARALLEL</key>
+    <string>1</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/ollama.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/ollama.log</string>
+</dict>
+</plist>

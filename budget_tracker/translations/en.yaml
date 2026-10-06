@@ -1,0 +1,27 @@
+configuration:
+  ollama_url:
+    name: Ollama URL
+    description: >-
+      Address of an Ollama server on your network that reads receipts and statements,
+      e.g. http://192.168.1.10:11434. Leave empty to enter everything manually.
+  ollama_model:
+    name: Vision model
+    description: Ollama model that can read images. Default qwen3-vl:8b-instruct.
+  telegram_bot_token:
+    name: Telegram bot token
+    description: Optional. Token from @BotFather to log expenses and send receipts from Telegram.
+  telegram_auto_delete_hours:
+    name: Auto-delete Telegram messages (hours)
+    description: Bot messages and your messages are deleted from Telegram after this many hours (0 = off, max 47).
+  allowed_users:
+    name: Allowed users
+    description: Home Assistant usernames (or display names) that may open the app. Empty = all users.
+  notify_services:
+    name: Notification services
+    description: Notify services for reminders, e.g. mobile_app_my_phone.
+  notify_time:
+    name: Daily reminder time
+    description: Time of day (HH:MM) for daily reminders and summaries.
+  timezone:
+    name: Time zone
+    description: IANA time zone, e.g. America/New_York. Empty = use Home Assistant's time zone.

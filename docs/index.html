@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Budget Tracker for Home Assistant</title>
+  <meta name="description" content="A private household budget tracker that runs inside Home Assistant. Reads receipts and card statements with a local AI model, tracks cards, installments, recurring bills, plans and savings.">
+  <meta property="og:title" content="Budget Tracker for Home Assistant">
+  <meta property="og:description" content="Private household budgeting inside Home Assistant — receipts and statements read by a local AI model, nothing leaves your home.">
+  <meta property="og:image" content="screenshots/og.png">
+  <link rel="icon" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f6f7f9; --surface: #ffffff; --surface-2: #eef1f5; --text: #0f172a; --muted: #5b6474; --line: #e3e7ee;
+      --accent: #0a7cff; --accent-2: #00b386; --shadow: 0 10px 30px rgba(15, 23, 42, .08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0b0d12; --surface: #141821; --surface-2: #1b2130; --text: #eef2f8; --muted: #9aa4b5; --line: #262d3b;
+        --accent: #3d9bff; --accent-2: #2fd3a6; --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 Inter, system-ui, -apple-system, Segoe UI, sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+    header.nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(12px); background: color-mix(in srgb, var(--bg) 80%, transparent); border-bottom: 1px solid var(--line); }
+    header.nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); }
+    .brand img { width: 28px; height: 28px; border-radius: 8px; }
+    .nav-links { display: flex; gap: 22px; font-size: 15px; }
+    .nav-links a { color: var(--muted); }
+    .nav-links a:hover { color: var(--text); }
+    @media (max-width: 640px) { .nav-links .hide-sm { display: none; } }
+
+    .hero { padding: 72px 0 40px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+    @media (max-width: 900px) { .hero { grid-template-columns: 1fr; padding-top: 48px; } }
+    .eyebrow { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 600; color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 12%, transparent); padding: 6px 12px; border-radius: 999px; }
+    h1 { font-size: clamp(36px, 5.4vw, 60px); line-height: 1.05; letter-spacing: -0.03em; margin: 18px 0 16px; }
+    h1 .grad { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lead { font-size: 19px; color: var(--muted); max-width: 560px; }
+    .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; align-items: center; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; }
+    .btn-primary { background: var(--accent); color: #fff; box-shadow: var(--shadow); }
+    .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+    .badges { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 22px; font-size: 13px; color: var(--muted); }
+    .badges span::before { content: "✓ "; color: var(--accent-2); font-weight: 700; }
+
+    .phones { position: relative; height: 560px; }
+    .phone { position: absolute; width: 260px; border-radius: 38px; padding: 10px; background: #0b0d12; box-shadow: 0 30px 60px rgba(15, 23, 42, .25); }
+    .phone img { display: block; width: 100%; border-radius: 30px; }
+    .phone.p1 { left: 8%; top: 0; transform: rotate(-4deg); }
+    .phone.p2 { right: 4%; top: 60px; transform: rotate(5deg); }
+    @media (max-width: 900px) { .phones { height: 480px; } .phone { width: 210px; } .phone.p1 { left: 4%; } .phone.p2 { right: 2%; } }
+    @media (max-width: 480px) { .phones { height: 400px; } .phone { width: 170px; } }
+
+    section { padding: 64px 0; }
+    h2 { font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -0.02em; margin: 0 0 12px; }
+    .sub { color: var(--muted); max-width: 640px; margin: 0 0 36px; font-size: 17px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+    .card .ico { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; background: var(--surface-2); font-size: 22px; margin-bottom: 14px; }
+    .card h3 { margin: 0 0 6px; font-size: 17px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    .shots { display: flex; gap: 18px; overflow-x: auto; padding: 8px 4px 20px; scroll-snap-type: x mandatory; }
+    .shots figure { margin: 0; flex: 0 0 240px; scroll-snap-align: start; }
+    .shots img { width: 100%; border-radius: 26px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .shots figcaption { text-align: center; color: var(--muted); font-size: 14px; margin-top: 10px; }
+
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    @media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+    .steps { counter-reset: s; display: grid; gap: 14px; }
+    .step { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 18px 18px 64px; position: relative; }
+    .step::before { content: counter(s); position: absolute; left: 18px; top: 18px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; }
+    .step h3 { margin: 0 0 4px; font-size: 16px; }
+    .step p { margin: 0; color: var(--muted); font-size: 15px; }
+    code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-size: 14px; }
+    pre { background: var(--surface-2); padding: 14px; border-radius: 12px; overflow-x: auto; font-size: 14px; }
+
+    .privacy { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface)), color-mix(in srgb, var(--accent-2) 14%, var(--surface))); border: 1px solid var(--line); border-radius: 24px; padding: 36px; }
+    .privacy ul { margin: 16px 0 0; padding-left: 20px; color: var(--text); }
+    .privacy li { margin: 6px 0; }
+
+    details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin-bottom: 10px; }
+    summary { cursor: pointer; font-weight: 600; }
+    details p { color: var(--muted); margin: 10px 0 0; }
+
+    footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 14px; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="#"><img src="icon.png" alt=""> Budget Tracker</a>
+      <nav class="nav-links">
+        <a href="#features" class="hide-sm">Features</a>
+        <a href="#screens" class="hide-sm">Screens</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/mmucahitkaya/budget_tracker">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="hero">
+      <div>
+        <span class="eyebrow">Home Assistant add-on · Open source</span>
+        <h1>Your household budget, <span class="grad">private and inside Home Assistant.</span></h1>
+        <p class="lead">Snap a receipt or drop in your card statement — a local AI model reads it, categorizes it and keeps every installment, bill and card balance in order. See what you can spend this month, plan the next fourteen, and find where the money really goes.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmmucahitkaya%2Fbudget_tracker">＋ Add to Home Assistant</a>
+          <a class="btn btn-ghost" href="https://github.com/mmucahitkaya/budget_tracker">View on GitHub</a>
+        </div>
+        <div class="badges"><span>No cloud, no subscription</span><span>Built for two-person households</span><span>Any currency</span></div>
+      </div>
+      <div class="phones" aria-hidden="true">
+        <div class="phone p1"><img src="screenshots/dashboard.png" alt=""></div>
+        <div class="phone p2"><img src="screenshots/plan.png" alt=""></div>
+      </div>
+    </div>
+
+    <section id="features">
+      <h2>Everything a shared household budget needs</h2>
+      <p class="sub">Designed on an iPhone for a couple managing money together — and comfortable on any screen.</p>
+      <div class="grid">
+        <div class="card"><div class="ico">📄</div><h3>Receipts &amp; statements, read for you</h3><p>Photos, screenshots or PDFs. Text PDFs are parsed line by line and reconciled to the statement total; images are read by a vision model running on your own computer.</p></div>
+        <div class="card"><div class="ico">💳</div><h3>Cards and installments</h3><p>Every card's balance, statement and due date. Installment purchases show up month by month — never twice, even across statements.</p></div>
+        <div class="card"><div class="ico">🔁</div><h3>Recurring income &amp; bills</h3><p>Salaries on the last business day, rent, loans with changing amounts, one-off payments — entered once, recorded automatically.</p></div>
+        <div class="card"><div class="ico">💰</div><h3>What can we spend?</h3><p>“This month left” and “next month at most”, with card payments counted when they are due. A Monday message keeps everyone on the same page.</p></div>
+        <div class="card"><div class="ico">📈</div><h3>A 14-month plan</h3><p>Income, fixed costs, debt payments, spending and savings goals per month, with running balance and debt payoff charts.</p></div>
+        <div class="card"><div class="ico">🔎</div><h3>Savings insights</h3><p>Biggest categories and merchants, subscriptions, frequent small purchases and concrete tips with estimated monthly savings — tap any tip to review the transactions.</p></div>
+        <div class="card"><div class="ico">🏷️</div><h3>Categorize in seconds</h3><p>Uncategorized spending grouped by merchant, one tap per group. Marketplace orders are kept separate, with a note for what you bought.</p></div>
+        <div class="card"><div class="ico">🪙</div><h3>Investments &amp; goals</h3><p>Stocks, funds, gold, silver and cash in other currencies, valued daily. Link them to savings goals and watch net worth grow.</p></div>
+        <div class="card"><div class="ico">💬</div><h3>Telegram bot (optional)</h3><p>“coffee 4.50” or a receipt photo is all it takes. Statement reminders, weekly summaries, private to your household.</p></div>
+      </div>
+    </section>
+
+    <section id="screens">
+      <h2>A closer look</h2>
+      <p class="sub">A native-feeling, iOS-style interface with light and dark mode.</p>
+      <div class="shots">
+        <figure><img src="screenshots/dashboard.png" alt="Dashboard with spendable amount"><figcaption>Dashboard</figcaption></figure>
+        <figure><img src="screenshots/plan.png" alt="14-month plan"><figcaption>Plan</figcaption></figure>
+        <figure><img src="screenshots/insights.png" alt="Savings insights"><figcaption>Savings insights</figcaption></figure>
+        <figure><img src="screenshots/categorize.png" alt="Categorize screen"><figcaption>Categorize</figcaption></figure>
+        <figure><img src="screenshots/card.png" alt="Card detail"><figcaption>Cards &amp; installments</figcaption></figure>
+        <figure><img src="screenshots/setup.png" alt="First-run setup"><figcaption>First-run setup</figcaption></figure>
+      </div>
+    </section>
+
+    <section>
+      <div class="privacy">
+        <h2>Private by design</h2>
+        <p class="sub" style="margin-bottom:0">Your financial data stays in your home.</p>
+        <ul>
+          <li>Data lives in a SQLite database inside the add-on and is included in Home Assistant backups.</li>
+          <li>Documents are read by <a href="https://ollama.com">Ollama</a> on a computer on your network — no cloud AI, no API keys.</li>
+          <li>Sign-in is your Home Assistant account; you choose which users may open the app.</li>
+          <li>The only outside calls are for exchange rates and investment prices.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="split">
+        <div>
+          <h2>Install in a few minutes</h2>
+          <p class="sub">Requires Home Assistant OS or Supervised (add-ons). Document reading is optional and needs a computer that can run Ollama — an Apple Silicon Mac or a PC with a GPU works well.</p>
+          <a class="btn btn-primary" href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fmmucahitkaya%2Fbudget_tracker">＋ Add repository to Home Assistant</a>
+        </div>
+        <div class="steps">
+          <div class="step"><h3>Add the repository</h3><p>Settings → Add-ons → Add-on store → ⋮ → Repositories, then add <code>https://github.com/mmucahitkaya/budget_tracker</code>.</p></div>
+          <div class="step"><h3>Install “Budget Tracker”</h3><p>Start it and turn on “Show in sidebar”. It opens as a panel in Home Assistant and in the companion app.</p></div>
+          <div class="step"><h3>Answer the setup questions</h3><p>Currency, number format and optional extras. You can change them any time in More → Settings.</p></div>
+          <div class="step"><h3>Optional: local document reading</h3><p>Install Ollama, run <code>ollama pull qwen3-vl:8b-instruct</code>, start it with <code>OLLAMA_HOST=0.0.0.0</code> and set the URL in the add-on options.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>FAQ</h2>
+      <details><summary>Which banks are supported?</summary><p>Any bank. Text PDFs are parsed with rules that understand US (1,234.56) and European (1.234,56) number formats and common installment notations; anything else goes to the local vision model. You always confirm a statement before it is saved.</p></details>
+      <details><summary>Which currencies?</summary><p>Pick a base currency at setup (USD, EUR, GBP, TRY and more). Transactions can be in other currencies too and are converted with daily European Central Bank rates.</p></details>
+      <details><summary>Can two people use it?</summary><p>Yes — it is built for a household. Each Home Assistant user signs in as themselves; cards, salaries and spending can belong to either person or be shared.</p></details>
+      <details><summary>Does it work without the AI model?</summary><p>Yes. Everything works with manual entry and the Telegram bot; the model only reads receipts and statements.</p></details>
+      <details><summary>Is it free?</summary><p>Yes, MIT licensed. Contributions and bug reports are welcome on GitHub.</p></details>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>Budget Tracker · MIT License</span>
+      <span><a href="https://github.com/mmucahitkaya/budget_tracker">GitHub</a> · <a href="https://github.com/mmucahitkaya/budget_tracker/issues">Report an issue</a></span>
+    </div>
+  </footer>
+</body>
+</html>

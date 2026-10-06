@@ -1,0 +1,16 @@
+.venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+.DS_Store
+budget_tracker/static/
+/screenshots/
+*.db
+
+# Never commit real financial documents
+/*.pdf
+/*.jpg
+/*.jpeg
+/*.png
+/*.heic
+private/
