@@ -1,5 +1,5 @@
 name: Budget Tracker
-version: "1.0.0"
+version: "1.0.1"
 slug: budget_tracker
 description: >-
   Household budget tracker: reads receipts and card statements with a local AI model,

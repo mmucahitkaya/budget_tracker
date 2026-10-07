@@ -93,7 +93,7 @@ def test_frankfurter_rates(usd, monkeypatch):
     usd.commit()
     calls = []
 
-    def fake_get(url, timeout=None):
+    def fake_get(url, timeout=None, **kw):
         calls.append(url)
         if "2026-10-04" in url:  # Sunday: no data
             return _Resp(404, {})
@@ -101,7 +101,7 @@ def test_frankfurter_rates(usd, monkeypatch):
 
     monkeypatch.setattr(fx.httpx, "get", fake_get)
     assert fx.fetch_rates(usd, date(2026, 10, 4))
-    assert calls[0] == "https://api.frankfurter.app/2026-10-04?base=USD&symbols=EUR,JPY"
+    assert calls[0] == "https://api.frankfurter.dev/v1/2026-10-04?base=USD&symbols=EUR,JPY"
     assert "tcmb" not in "".join(calls)
     rate = usd.get(FxRate, (date(2026, 10, 2), "EUR")).rate
     assert rate == pytest.approx(1.25)  # 1 EUR = 1.25 USD

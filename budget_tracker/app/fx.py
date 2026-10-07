@@ -1,7 +1,7 @@
 """Exchange rates and conversion to the household base currency.
 
 FxRate.rate = units of BASE currency per 1 unit of `currency`.
-Sources: ECB reference rates via frankfurter.app (any base), or the CBRT (TCMB) when the Turkey region pack is
+Sources: ECB reference rates via Frankfurter (api.frankfurter.dev) (any base), or the CBRT (TCMB) when the Turkey region pack is
 active and the base currency is TRY.
 """
 import logging
@@ -18,7 +18,7 @@ from .models import FxRate
 
 log = logging.getLogger(__name__)
 
-FRANKFURTER = "https://api.frankfurter.app"
+FRANKFURTER = "https://api.frankfurter.dev/v1"
 
 
 # ---- TCMB (Turkey region pack, base TRY) ------------------------------------------
@@ -71,7 +71,7 @@ def parse_frankfurter(data: dict) -> tuple[date, dict[str, float]]:
 
 
 def _fetch_frankfurter(target: date | None, base: str, wanted: list[str]) -> tuple[date, dict[str, float]] | None:
-    r = httpx.get(frankfurter_url(base, wanted, target), timeout=15)
+    r = httpx.get(frankfurter_url(base, wanted, target), timeout=15, follow_redirects=True)
     if r.status_code != 200:
         return None
     return parse_frankfurter(r.json())

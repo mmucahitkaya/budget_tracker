@@ -29,7 +29,7 @@ UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit
 TRUNCGIL = "https://finans.truncgil.com/v4/today.json"
 YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1d"
 TCMB = "https://www.tcmb.gov.tr/kurlar/today.xml"
-FRANKFURTER = "https://api.frankfurter.app/latest?base={base}&symbols={symbols}"
+FRANKFURTER = "https://api.frankfurter.dev/v1/latest?base={base}&symbols={symbols}"
 
 TROY_OUNCE_G = 31.1034768
 
@@ -221,7 +221,7 @@ def fetch_fx(base: str, codes: list[str], timeout: float = 15) -> dict[str, floa
         tcmb = fetch_tcmb_all()
         return {c: tcmb[c] for c in codes if c in tcmb}
     try:
-        r = httpx.get(FRANKFURTER.format(base=base, symbols=",".join(codes)), headers=UA, timeout=timeout)
+        r = httpx.get(FRANKFURTER.format(base=base, symbols=",".join(codes)), headers=UA, timeout=timeout, follow_redirects=True)
         r.raise_for_status()
         rates = r.json().get("rates") or {}
     except Exception as e:  # network/JSON error
