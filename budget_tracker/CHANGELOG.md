@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- Fix: tapping a notification opened a 404 page for non-admin users
+
 ## 1.0.1
 
 - Fix: exchange rates were not downloaded (the Frankfurter API moved to api.frankfurter.dev)

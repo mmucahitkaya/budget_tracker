@@ -49,7 +49,8 @@ def panel_url() -> str:
             slug = r.json()["data"]["slug"]
         except Exception as e:
             log.debug("Add-on slug not available: %s", e)
-        _panel_url = f"/hassio/ingress/{slug}"
+        # The sidebar panel path also works for non-admin users (/hassio/... is admin-only)
+        _panel_url = f"/{slug}"
     return _panel_url
 
 
